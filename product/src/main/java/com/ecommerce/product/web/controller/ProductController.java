@@ -19,37 +19,27 @@ import java.util.Optional;
 @RestController
 @CrossOrigin("*")
 public class ProductController {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private final ProductDao productDao;
 
-    @Autowired
-    ProductDao productDao;
+    public ProductController(ProductDao productDao) {
+        this.productDao = productDao;
+    }
 
-    Logger log = LoggerFactory.getLogger(this.getClass());
-
-
-    // Affiche la liste de tous les produits disponibles
     @GetMapping(value = "/products")
     public List<Product> findAll(){
-
         List<Product> products = productDao.findAll();
-
-        if(products.isEmpty()) throw new ProductNotFoundException("Aucun produit n'est disponible à la vente");
-
-        log.info("Récupération de la liste des produits");
-
+        if(products.isEmpty()) throw new ProductNotFoundException("No Product is available for sale");
+        log.info("Retrieving the list of products");
         return products;
-
     }
 
     //Récuperer un produit par son id
     @GetMapping( value = "/products/{id}")
-    public Optional<Product> recupererUnProduit(@PathVariable int id) {
-
+    public Optional<Product> findById(@PathVariable int id) {
         Optional<Product> product = productDao.findById(id);
-
         if(!product.isPresent())  throw new ProductNotFoundException("Le produit correspondant à l'id " + id + " n'existe pas");
-
         return product;
     }
-
 }
 

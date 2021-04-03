@@ -19,52 +19,51 @@ import java.net.InetSocketAddress;
 @RefreshScope
 
 public class LogbackConfiguration {
-private static final String LOGSTASH_APPENDER_NAME = "LOGSTASH";
-private static final String ASYNC_LOGSTASH_APPENDER_NAME = "ASYNC_LOGSTASH";
-private final Logger LOG = LoggerFactory.getLogger(LogbackConfiguration.class);
-private final LoggerContext CONTEXT = (LoggerContext) LoggerFactory.getILoggerFactory();
-private final String appName;
-private final String logstashHost;
-private final Integer logstashPort;
-private final Integer logstashQueueSize;
-public LogbackConfiguration(
-@Value("${spring.application.name}") String appName,
-@Value("${logstash.host}") String logstashHost,
-@Value("${logstash.port}") Integer logstashPort,
-@Value("${logstash.queue-size}") Integer logstashQueueSize) {
-this.appName = appName;
-this.logstashHost = logstashHost;
-this.logstashPort = logstashPort;
-this.logstashQueueSize = logstashQueueSize;
-addLogstashAppender(CONTEXT);
-}
-private void addLogstashAppender(LoggerContext context) {
-LOG.info("Initializing Logstash logging");
-LogstashTcpSocketAppender logstashAppender = new LogstashTcpSocketAppender();
-logstashAppender.setName(LOGSTASH_APPENDER_NAME);
-logstashAppender.setContext(context);
-String customFields = "{\"servicename\":\"" + this.appName + "\"}";
-// More documentation is available at: https://github.com/logstash/logstash-logback-encoder
-LogstashEncoder logstashEncoder = new LogstashEncoder();
-// Set the Logstash appender config
-logstashEncoder.setCustomFields(customFields);
-logstashAppender.addDestinations(
-new InetSocketAddress(this.logstashHost, this.logstashPort)
-);
-ShortenedThrowableConverter throwableConverter = new ShortenedThrowableConverter();
-throwableConverter.setRootCauseFirst(true);
-logstashEncoder.setThrowableConverter(throwableConverter);
-logstashEncoder.setCustomFields(customFields);
-logstashAppender.setEncoder(logstashEncoder);
+    private static final String LOGSTASH_APPENDER_NAME = "LOGSTASH";
+    private static final String ASYNC_LOGSTASH_APPENDER_NAME = "ASYNC_LOGSTASH";
+    private final Logger LOG = LoggerFactory.getLogger(LogbackConfiguration.class);
+    private final String appName;
+    private final String logstashHost;
+    private final Integer logstashPort;
+    private final Integer logstashQueueSize;
 
-logstashAppender.start();
-// Wrap the appender in an Async appender for performance
-AsyncAppender asyncLogstashAppender = new AsyncAppender();
-asyncLogstashAppender.setContext(context);
-asyncLogstashAppender.setName(ASYNC_LOGSTASH_APPENDER_NAME);
-asyncLogstashAppender.setQueueSize(this.logstashQueueSize);
-asyncLogstashAppender.addAppender(logstashAppender);
-asyncLogstashAppender.start();
-context.getLogger("ROOT").addAppender(asyncLogstashAppender);
-}
+    public LogbackConfiguration(
+            @Value("${spring.application.name}") String appName,
+            @Value("${logstash.host}") String logstashHost,
+            @Value("${logstash.port}") Integer logstashPort,
+            @Value("${logstash.queue-size}") Integer logstashQueueSize) {
+        this.appName = appName;
+        this.logstashHost = logstashHost;
+        this.logstashPort = logstashPort;
+        this.logstashQueueSize = logstashQueueSize;
+        addLogstashAppender((LoggerContext) LoggerFactory.getILoggerFactory());
+    }
+
+    private void addLogstashAppender(LoggerContext context) {
+        LOG.info("Initializing Logstash logging");
+        LogstashTcpSocketAppender logstashAppender = new LogstashTcpSocketAppender();
+        logstashAppender.setName(LOGSTASH_APPENDER_NAME);
+        logstashAppender.setContext(context);
+        logstashAppender.addDestinations(new InetSocketAddress(this.logstashHost, this.logstashPort));
+        String customFields = "{\"servicename\":\"" + this.appName + "\"}";
+        // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
+        LogstashEncoder logstashEncoder = new LogstashEncoder();
+        // Set the Logstash appender config
+        logstashEncoder.setCustomFields(customFields);
+        ShortenedThrowableConverter throwableConverter = new ShortenedThrowableConverter();
+        throwableConverter.setRootCauseFirst(true);
+        logstashEncoder.setThrowableConverter(throwableConverter);
+        logstashEncoder.setCustomFields(customFields);
+        logstashAppender.setEncoder(logstashEncoder);
+
+        logstashAppender.start();
+        // Wrap the appender in an Async appender for performance
+        AsyncAppender asyncLogstashAppender = new AsyncAppender();
+        asyncLogstashAppender.setContext(context);
+        asyncLogstashAppender.setName(ASYNC_LOGSTASH_APPENDER_NAME);
+        asyncLogstashAppender.setQueueSize(this.logstashQueueSize);
+        asyncLogstashAppender.addAppender(logstashAppender);
+        asyncLogstashAppender.start();
+        context.getLogger("ROOT").addAppender(asyncLogstashAppender);
+    }
 }
