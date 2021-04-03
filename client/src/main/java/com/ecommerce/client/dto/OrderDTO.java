@@ -14,7 +14,4 @@ public class OrderDTO {
     private Date date;
 
     private Integer quantity;
-
-
-
 }
